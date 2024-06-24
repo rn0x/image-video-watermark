@@ -1,0 +1,44 @@
+{
+  "name": "image-video-watermark",
+  "version": "1.0.0",
+  "description": "Library to add watermark to images and videos using Node.js with Jimp and ffmpeg.",
+  "main": "src/addWatermark.js",
+  "type": "module",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "author": {
+    "name": "ryan almalki",
+    "url": "https://github.com/rn0x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rn0x/image-video-watermark.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rn0x/image-video-watermark/issues"
+  },
+  "homepage": "https://github.com/rn0x/image-video-watermark#readme",
+  "license": "MIT",
+  "keywords": [
+    "Node.js",
+    "JavaScript",
+    "npm package",
+    "image processing",
+    "video processing",
+    "watermark",
+    "image watermark",
+    "video watermark",
+    "media processing",
+    "image manipulation",
+    "video manipulation"
+  ],
+  "dependencies": {
+    "jimp": "^0.16.2",
+    "which": "^2.0.2"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=10.0.0"
+  }
+}
