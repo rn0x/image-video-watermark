@@ -1,11 +1,3 @@
-/**
- * LICENSE MIT
- * Copyright (c) 2024 rn0x
- * github: https://github.com/rn0x
- * telegram: https://t.me/F93ii
- * repository: https://github.com/rn0x/image-video-watermark
- */
-
 import Jimp from 'jimp';
 import fs from 'fs';
 import { promisify } from 'util';
@@ -58,8 +50,8 @@ async function addWatermark(inputPath, watermarkPath, options = {}, callback) {
     await mkdir(outputDir, { recursive: true });
   }
 
-  try {
-    if (imageType === 'image') {
+  if (imageType === 'image') {
+    try {
       let image = await Jimp.read(inputPath);
       let watermark = await Jimp.read(watermarkPath);
 
@@ -124,68 +116,79 @@ async function addWatermark(inputPath, watermarkPath, options = {}, callback) {
       } else {
         return result;
       }
-    } else if (imageType === 'video') {
-      try {
-        // Check if ffmpeg is installed
-        const which_ffmpeg = await which('ffmpeg');
-        ffmpegPath = which_ffmpeg;
-      } catch (err) {
-        const errMessage = 'ffmpeg is not installed on the system. Please install it first.';
-        if (callback && typeof callback === 'function') {
-          callback(new Error(errMessage));
-        } else {
-          console.error(errMessage);
-        }
-        return;
+    } catch (err) {
+      // Handle any errors during the process
+      if (callback && typeof callback === 'function') {
+        callback(err);
+      } else {
+        throw err;
       }
+    }
+  } else if (imageType === 'video') {
+    try {
+      // Check if ffmpeg is installed
+      const which_ffmpeg = await which('ffmpeg');
+      ffmpegPath = which_ffmpeg;
+    } catch (err) {
+      const errMessage = 'ffmpeg is not installed on the system. Please install it first.';
+      if (callback && typeof callback === 'function') {
+        callback(new Error(errMessage));
+      } else {
+        throw new Error(errMessage);
+      }
+    }
 
-      // Read the watermark file as buffer
-      const watermarkBuffer = await readFile(watermarkPath);
-      // Extract filename from inputPath
-      const filename = path.basename(inputPath);
-      const outputFileName = filename.replace(/\.[^.]+$/, '') + '.output.mp4';
+    // Extract filename from inputPath
+    const filename = path.basename(inputPath);
+    const outputFileName = filename.replace(/\.[^.]+$/, '') + '.output.mp4';
 
-      // Define output path for the video file
-      const finalOutputPath = path.join(outputDir, outputFileName);
-      // Define ffmpeg arguments for adding watermark to video
-      const ffmpegArgs = [
-        '-i', inputPath,
-        '-i', watermarkPath,
-        '-filter_complex', getOverlayFilter(position, margin, watermarkScalePercentage, opacity),
-        '-c:a', 'copy',
-        '-y',
-        finalOutputPath,
-      ];
+    // Define output path for the video file
+    const finalOutputPath = path.join(outputDir, outputFileName);
+    // Define ffmpeg arguments for adding watermark to video
+    const ffmpegArgs = [
+      '-i', inputPath,
+      '-i', watermarkPath,
+      '-filter_complex', getOverlayFilter(position, margin, watermarkScalePercentage, opacity),
+      '-c:a', 'copy',
+      '-y',
+      finalOutputPath,
+    ];
 
+    return new Promise((resolve, reject) => {
       // Spawn ffmpeg process
-      const ffmpegProcess = spawn(ffmpegPath, ffmpegArgs, {
-        stdio: ['ignore', 'ignore', 'ignore']
-      });
+      const ffmpegProcess = spawn(ffmpegPath, ffmpegArgs);
 
-      // Handle close event of ffmpeg process
       ffmpegProcess.on('close', async (code) => {
         if (code === 0) {
-          // Read the output video file as buffer
-          const outputBuffer = await readFileAsync(finalOutputPath);
-          // Delete the output video file after reading
-          await unlinkAsync(finalOutputPath);
+          try {
+            // Read the output video file as buffer
+            const outputBuffer = await readFileAsync(finalOutputPath);
+            // Delete the output video file after reading
+            await unlinkAsync(finalOutputPath);
 
-          const result = {
-            buffer: outputBuffer
-          };
+            const result = {
+              buffer: outputBuffer
+            };
 
-          // Handle callback if provided
-          if (callback && typeof callback === 'function') {
-            callback(null, result);
-          } else {
-            return result;
+            // Handle callback if provided
+            if (callback && typeof callback === 'function') {
+              callback(null, result);
+            } else {
+              resolve(result);
+            }
+          } catch (err) {
+            if (callback && typeof callback === 'function') {
+              callback(err);
+            } else {
+              reject(err);
+            }
           }
         } else {
           const errMessage = `Error occurred while adding watermark to the video. Error code: ${code}`;
           if (callback && typeof callback === 'function') {
             callback(new Error(errMessage));
           } else {
-            console.error(errMessage);
+            reject(new Error(errMessage));
           }
         }
       });
@@ -195,22 +198,10 @@ async function addWatermark(inputPath, watermarkPath, options = {}, callback) {
         if (callback && typeof callback === 'function') {
           callback(err);
         } else {
-          console.error('Error occurred while running ffmpeg process:', err);
+          reject(err);
         }
       });
-
-      // Wait until ffmpeg process finishes
-      await new Promise((resolve) => {
-        ffmpegProcess.on('close', resolve);
-      });
-    }
-  } catch (err) {
-    // Handle any errors during the process
-    if (callback && typeof callback === 'function') {
-      callback(err);
-    } else {
-      console.error('Error occurred while adding watermark:', err);
-    }
+    });
   }
 }
 

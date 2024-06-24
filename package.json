@@ -1,6 +1,6 @@
 {
   "name": "image-video-watermark",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Library to add watermark to images and videos using Node.js with Jimp and ffmpeg.",
   "main": "src/addWatermark.js",
   "type": "module",
